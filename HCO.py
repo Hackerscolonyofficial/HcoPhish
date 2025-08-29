@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HCO Phishing Awareness Demo with YouTube Integration
+HCO Phish by Azhar
 For educational purposes only
 """
 
