@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HCO Security Awareness Demo by Azhar
+HCO Security Awareness Demo
 For educational purposes only
 """
 
@@ -286,8 +286,8 @@ def auth():
 if __name__ == '__main__':
     print("\033[1;35m")
     print("╔══════════════════════════════════════════════════════════════╗")
-    print("║                 HCO Security Awareness Demo                  ║")
-    print("║               SIMULATION FOR EDUCATIONAL USE                 ║")
+    print("║                 HCO Phish by Azhar.                                     ║")
+    print("║               SIMULATION FOR EDUCATIONAL USE                            ║")
     print("╚══════════════════════════════════════════════════════════════╝")
     print("\033[1;36m")
     print("[+] Security Awareness Demo starting...")
