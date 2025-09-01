@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HCO Security Awareness Demo
+HCO Phish by Azhar
 For educational purposes only
 """
 
