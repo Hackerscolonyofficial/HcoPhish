@@ -1,148 +1,112 @@
 #!/usr/bin/env python3
 """
-HCO Phish by Azhar
+HCO Phish Tool by Azhar
 For educational purposes only
 """
 
-from flask import Flask, render_template_string, request, redirect, url_for
-import threading
+import os
 import time
-from datetime import datetime, timedelta
+import sys
+import subprocess
+import threading
+from flask import Flask, render_template_string, redirect
+
+# Check if Flask is installed, install if not
+try:
+    from flask import Flask, render_template_string, redirect
+except ImportError:
+    print("Installing Flask...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
+    from flask import Flask, render_template_string, redirect
+
+# Color codes for terminal
+class colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    WHITE = '\033[97m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 
 app = Flask(__name__)
 
-# Global variables
-countdown_time = 8  # seconds
-start_time = datetime.now()
-unlock_time = start_time + timedelta(seconds=countdown_time)
-subscribed = False
-
-# HTML Template with all features
+# HTML Template
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HCO Security Awareness</title>
+    <title>HCO Tool</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', monospace;
         }
         
         body {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: #fff;
+            background: #000;
+            color: #0f0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            background-image: radial-gradient(#002200, #000);
         }
         
         .container {
             max-width: 600px;
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
             padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 20px #0f0;
             text-align: center;
+            border: 1px solid #0f0;
         }
         
         h1 {
             font-size: 2.5rem;
             margin-bottom: 20px;
-            background: linear-gradient(90deg, #ff8a00, #e52e71);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
         }
         
         .logo {
             font-size: 3.5rem;
             font-weight: bold;
             margin-bottom: 10px;
-            background: linear-gradient(90deg, #ff8a00, #e52e71);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            color: #aaa;
-            margin-bottom: 30px;
+            color: #f00;
+            text-shadow: 0 0 10px #f00;
         }
         
         .countdown {
             text-align: center;
             margin: 30px 0;
             padding: 20px;
-            background: rgba(255, 138, 0, 0.1);
+            background: rgba(0, 255, 0, 0.1);
             border-radius: 15px;
-            border: 1px solid rgba(255, 138, 0, 0.3);
-        }
-        
-        .countdown-text {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+            border: 1px solid #0f0;
         }
         
         .timer {
             font-size: 3rem;
             font-weight: bold;
-            color: #ff8a00;
-            text-shadow: 0 0 10px rgba(255, 138, 0, 0.5);
+            color: #f00;
+            text-shadow: 0 0 10px #f00;
             margin: 20px 0;
-        }
-        
-        .unlock-message {
-            text-align: center;
-            margin: 30px 0;
-            padding: 20px;
-            background: rgba(46, 204, 113, 0.1);
-            border-radius: 15px;
-            border: 1px solid rgba(46, 204, 113, 0.3);
-        }
-        
-        .unlock-text {
-            font-size: 1.8rem;
-            color: #2ecc71;
-            text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-            margin-bottom: 20px;
-        }
-        
-        .author {
-            font-size: 1.5rem;
-            color: #ff8a00;
-            margin: 20px 0;
-        }
-        
-        .cloudflare-link {
-            display: block;
-            margin: 30px 0;
-            padding: 15px;
-            background: rgba(255, 138, 0, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 138, 0, 0.3);
-            text-decoration: none;
-            color: #ff8a00;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        
-        .cloudflare-link:hover {
-            background: rgba(255, 138, 0, 0.2);
-            transform: translateY(-2px);
         }
         
         .button {
-            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            background: #00f;
             border: none;
             color: white;
             padding: 15px 30px;
@@ -152,20 +116,20 @@ HTML_TEMPLATE = """
             font-size: 18px;
             margin: 20px 0;
             cursor: pointer;
-            border-radius: 50px;
+            border-radius: 5px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid #00f;
         }
         
         .button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            background: #007;
+            box-shadow: 0 0 15px #00f;
         }
         
         .footer {
             text-align: center;
             margin-top: 40px;
-            color: #777;
+            color: #0f0;
             font-size: 0.9rem;
         }
         
@@ -173,96 +137,36 @@ HTML_TEMPLATE = """
             display: none;
         }
         
-        .youtube-icon {
-            font-size: 4rem;
-            color: #ff0000;
-            margin: 20px 0;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
+        .options {
             text-align: left;
-        }
-        
-        .instructions ol {
-            padding-left: 20px;
-            margin: 15px 0;
-        }
-        
-        .instructions li {
-            margin-bottom: 10px;
-        }
-        
-        .service-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
             margin: 20px 0;
         }
         
-        .service-btn {
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .option-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(0, 0, 255, 0.1);
+            border-radius: 5px;
+            border-left: 3px solid #00f;
         }
         
-        .service-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+        .author {
+            color: #f00;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 0 5px #f00;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">HCO</div>
-        <h1>Phishing Awareness Demo</h1>
-        <p class="subtitle">Educational purpose only</p>
+        <h1>Phish Tool</h1>
         
-        <div id="serviceSelection">
-            <div class="instructions">
-                <h3>Select a platform to demonstrate:</h3>
-            </div>
+        <div id="subscribeSection">
+            <p>Tool locked 🔐 To unlock subscribe to our YouTube channel</p>
             
-            <div class="service-grid">
-                <button class="service-btn" onclick="selectService('gmail')">Gmail</button>
-                <button class="service-btn" onclick="selectService('youtube')">YouTube</button>
-                <button class="service-btn" onclick="selectService('facebook')">Facebook</button>
-                <button class="service-btn" onclick="selectService('instagram')">Instagram</button>
-                <button class="service-btn" onclick="selectService('pubg')">PUBG</button>
-                <button class="service-btn" onclick="selectService('freefire')">Free Fire</button>
-                <button class="service-btn" onclick="selectService('bgmi')">BGMI</button>
-                <button class="service-btn" onclick="selectService('threads')">Threads</button>
-                <button class="service-btn" onclick="selectService('snapchat')">Snapchat</button>
-            </div>
-        </div>
-        
-        <div id="subscribeSection" class="hidden">
-            <div class="instructions">
-                <h3>To unlock the tool for <span id="selectedService">YouTube</span>:</h3>
-                <ol>
-                    <li>Subscribe to our YouTube channel</li>
-                    <li>Return to this page</li>
-                    <li>Click the verification button</li>
-                </ol>
-            </div>
-            
-            <div class="youtube-icon">▶️</div>
-            
-            <a href="https://www.youtube.com" target="_blank" class="button">Visit YouTube</a>
+            <a href="https://www.youtube.com" target="_blank" class="button">Subscribe on YouTube</a>
             
             <div style="margin-top: 30px;">
                 <button class="button" onclick="verifySubscription()">I've Subscribed</button>
@@ -271,47 +175,41 @@ HTML_TEMPLATE = """
         
         <div id="countdownSection" class="hidden">
             <div class="countdown">
-                <p class="countdown-text">Unlocking tool in:</p>
-                <div class="timer" id="timer">8</div>
+                <p>Redirecting to YouTube in:</p>
+                <div class="timer" id="timer">10</div>
             </div>
         </div>
         
         <div id="unlockSection" class="hidden">
-            <div class="unlock-message">
-                <p class="unlock-text">🔓 Tool Unlocked!</p>
-                <p class="author">HCO Phish by Azhar</p>
+            <div class="author">HCO Phish by Azhar</div>
+            
+            <div class="options">
+                <div class="option-item">1. Instagram</div>
+                <div class="option-item">2. Facebook</div>
+                <div class="option-item">3. Gmail</div>
+                <div class="option-item">4. YouTube</div>
+                <div class="option-item">5. Free Fire</div>
+                <div class="option-item">6. PUBG</div>
+                <div class="option-item">7. BGMI</div>
+                <div class="option-item">8. Threads</div>
+                <div class="option-item">9. Snapchat</div>
+                <div class="option-item">10. Yahoo</div>
             </div>
             
-            <a href="https://cloudflare.com" target="_blank" class="cloudflare-link">
-                🔗 Cloudflare Protected Link
-            </a>
-            
             <div class="footer">
-                <p>This is a security awareness demonstration tool only.</p>
-                <p>For educational use with proper authorization.</p>
+                <p>For educational purposes only</p>
             </div>
         </div>
     </div>
 
     <script>
-        let selectedService = 'youtube';
-        
-        function selectService(service) {
-            selectedService = service;
-            document.getElementById('selectedService').textContent = service.charAt(0).toUpperCase() + service.slice(1);
-            
-            // Hide service selection, show subscribe section
-            document.getElementById('serviceSelection').classList.add('hidden');
-            document.getElementById('subscribeSection').classList.remove('hidden');
-        }
-        
         function verifySubscription() {
             // Hide subscribe section, show countdown
             document.getElementById('subscribeSection').classList.add('hidden');
             document.getElementById('countdownSection').classList.remove('hidden');
             
-            // Start countdown from 8
-            let count = 8;
+            // Start countdown from 10
+            let count = 10;
             const timerElement = document.getElementById('timer');
             
             const countdownInterval = setInterval(() => {
@@ -319,13 +217,23 @@ HTML_TEMPLATE = """
                 
                 if (count === 0) {
                     clearInterval(countdownInterval);
-                    // Show unlock section
-                    document.getElementById('countdownSection').classList.add('hidden');
-                    document.getElementById('unlockSection').classList.remove('hidden');
+                    // Redirect to YouTube
+                    window.location.href = 'https://www.youtube.com';
+                    // After redirect, show unlock section when coming back
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + '/unlock';
+                    }, 5000);
                 }
                 
                 count--;
             }, 1000);
+        }
+        
+        // Check if we're on the unlock page
+        if (window.location.pathname === '/unlock') {
+            document.getElementById('subscribeSection').classList.add('hidden');
+            document.getElementById('countdownSection').classList.add('hidden');
+            document.getElementById('unlockSection').classList.remove('hidden');
         }
     </script>
 </body>
@@ -336,30 +244,79 @@ HTML_TEMPLATE = """
 def index():
     return render_template_string(HTML_TEMPLATE)
 
+@app.route('/unlock')
+def unlock():
+    return render_template_string(HTML_TEMPLATE)
+
 @app.route('/youtube')
 def youtube_redirect():
-    # Redirect to YouTube
     return redirect("https://www.youtube.com")
 
-@app.route('/cloudflare')
-def cloudflare_redirect():
-    # Redirect to Cloudflare
-    return redirect("https://www.cloudflare.com")
+def print_banner():
+    os.system('clear')
+    print(f"{colors.RED}{colors.BOLD}")
+    print("╔══════════════════════════════════════════════════╗")
+    print("║                HCO Phish Tool                   ║")
+    print("║                 by Azhar                        ║")
+    print("╚══════════════════════════════════════════════════╝")
+    print(f"{colors.END}")
+    print(f"{colors.RED}Tool locked 🔐 To unlock subscribe our YouTube channel{colors.END}")
+    print()
+
+def countdown():
+    for i in range(9, 0, -1):
+        print(f"{colors.RED}Redirecting to YouTube in: {colors.YELLOW}{i}{colors.END}", end='\r')
+        time.sleep(1)
+    print()
+    
+    # Open YouTube in browser
+    print(f"{colors.GREEN}Redirecting to YouTube...{colors.END}")
+    time.sleep(2)
+    
+    # Simulate coming back
+    print(f"{colors.CYAN}Welcome back! Tool unlocked.{colors.END}")
+    time.sleep(1)
+    
+    # Show options
+    print(f"\n{colors.RED}HCO Phish by Azhar{colors.END}")
+    print(f"{colors.YELLOW}Available options:{colors.END}")
+    print(f"{colors.GREEN}1. Instagram{colors.END}")
+    print(f"{colors.GREEN}2. Facebook{colors.END}")
+    print(f"{colors.GREEN}3. Gmail{colors.END}")
+    print(f"{colors.GREEN}4. YouTube{colors.END}")
+    print(f"{colors.GREEN}5. Free Fire{colors.END}")
+    print(f"{colors.GREEN}6. PUBG{colors.END}")
+    print(f"{colors.GREEN}7. BGMI{colors.END}")
+    print(f"{colors.GREEN}8. Threads{colors.END}")
+    print(f"{colors.GREEN}9. Snapchat{colors.END}")
+    print(f"{colors.GREEN}10. Yahoo{colors.END}")
+    print(f"\n{colors.CYAN}Select an option (1-10): {colors.END}", end='')
+
+def run_flask():
+    print(f"{colors.BLUE}\nWeb server starting on http://127.0.0.1:5000{colors.END}")
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+
+def main():
+    print_banner()
+    
+    # Wait for user to press enter
+    input(f"{colors.YELLOW}Press Enter after subscribing...{colors.END}")
+    
+    # Start countdown
+    countdown()
+    
+    # Start Flask app in a separate thread
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+    
+    # Keep the main thread alive
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print(f"\n{colors.RED}Exiting...{colors.END}")
+        sys.exit(0)
 
 if __name__ == '__main__':
-    # Print startup message
-    print("\033[1;35m")
-    print("╔══════════════════════════════════════════════════════════════╗")
-    print("║                                 HCO Phish by Azhar                      ║")
-    print("╚══════════════════════════════════════════════════════════════╝")
-    print("\033[1;36m")
-    print("[+] Enhanced HCO Awareness starting...")
-    print("[+] Educational purpose only")
-    print("[+] Created by Azhar (Hackers Colony)")
-    print("\033[1;33m")
-    print(f"[+] Server available at: http://127.0.0.1:5000")
-    print("[+] On other devices, use your device's IP address instead of localhost")
-    print("\033[0m")
-    
-    # Run the Flask app
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    main()
