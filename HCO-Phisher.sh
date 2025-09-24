@@ -299,7 +299,7 @@ start_cloudflared() {
 	{ sleep 1; setup_site; }
 	echo -ne "\n\n${RED}[${WHITE}-${RED}]${GREEN} Launching Cloudflared..."
 
-	sleep 2 && cloudflared tunnel --url http://"$HOST":"$PORT" --logfile .server/.cld.log > /dev/null 2>&1 &
+	cloudflared tunnel --url http://"$HOST":"$PORT" --logfile .server/.cld.log > /dev/null 2>&1 &
 
 	sleep 8
 	cldflr_url=$(grep -o 'https://[-0-9a-z]*\.trycloudflare.com' ".server/.cld.log")
